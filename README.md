@@ -2,7 +2,7 @@
 
 > **Building Enterprise Multi-Agent AI Systems Locally**
 
-🎥 **[Watch the Talk](link-to-recording)** | 📊 **[View Slides](presentation/slides.md)** | 🚀 **[Try the Demo](#quick-start)**
+** | 📊 **[View Slides](presentation/slides.md)** | 🚀 **[Try the Demo](#quick-start)**
 
 ## 🌟 Overview
 
