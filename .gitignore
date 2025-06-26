@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Demo specific
+demo/test_streaming.py
+demo/fanint.md
+demo/THERMAL_SETUP.md
+demo/STREAMING_UPDATE.md

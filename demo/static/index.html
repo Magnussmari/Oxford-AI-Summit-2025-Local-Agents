@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalMind Collective - Oxford AI Summit 2025</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>LocalMind Collective</h1>
+            <p class="subtitle">Multi-Agent AI Research System - Live Demo</p>
+            <div class="summit-badge">Oxford AI Summit 2025</div>
+        </header>
+
+        <!-- System Status -->
+        <div class="system-status" id="systemStatus">
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="label">Platform:</span>
+                    <span class="value" id="platform">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">GPU:</span>
+                    <span class="value" id="gpu">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">VRAM:</span>
+                    <span class="value" id="vram">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">CPU Temp:</span>
+                    <span class="value" id="cpuTemp">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Fan Speed:</span>
+                    <span class="value" id="fanSpeed">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Web Search:</span>
+                    <span class="value" id="webSearch">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel: Controls -->
+            <div class="control-panel">
+                <h2>Demo Scenarios</h2>
+                <div class="scenarios" id="scenarios">
+                    <!-- Scenarios will be loaded here -->
+                </div>
+                
+                <div class="custom-query">
+                    <h3>Custom Query</h3>
+                    <textarea id="customQuery" placeholder="Enter your research question..."></textarea>
+                    <select id="queryMode">
+                        <option value="simple">Simple (1 agent)</option>
+                        <option value="auto" selected>Auto (2-3 agents)</option>
+                        <option value="expert">Expert (3-4 agents)</option>
+                    </select>
+                    <button id="runCustom" class="btn-primary">Run Research</button>
+                </div>
+
+                <div class="model-info">
+                    <h3>Available Models</h3>
+                    <div id="modelList" class="model-list">
+                        <!-- Models will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Results -->
+            <div class="results-panel">
+                <!-- Agent Activity Monitor -->
+                <div class="agent-monitor" id="agentMonitor">
+                    <h3>Agent Activity</h3>
+                    <div class="agent-grid" id="agentGrid">
+                        <div class="agent-card" data-agent="principal">
+                            <div class="agent-icon">🧠</div>
+                            <div class="agent-name">Principal Synthesizer</div>
+                            <div class="agent-status">Idle</div>
+                            <div class="agent-model">deepseek-r1:8b</div>
+                        </div>
+                        <div class="agent-card" data-agent="domain">
+                            <div class="agent-icon">🎓</div>
+                            <div class="agent-name">Domain Specialist</div>
+                            <div class="agent-status">Idle</div>
+                            <div class="agent-model">qwen3:8b</div>
+                        </div>
+                        <div class="agent-card" data-agent="web">
+                            <div class="agent-icon">🌐</div>
+                            <div class="agent-name">Web Harvester</div>
+                            <div class="agent-status">Idle</div>
+                            <div class="agent-model">qwen3:4b</div>
+                        </div>
+                        <div class="agent-card" data-agent="fact">
+                            <div class="agent-icon">✓</div>
+                            <div class="agent-name">Fact Validator</div>
+                            <div class="agent-status">Idle</div>
+                            <div class="agent-model">phi4-mini</div>
+                        </div>
+                        <div class="agent-card" data-agent="quality">
+                            <div class="agent-icon">⭐</div>
+                            <div class="agent-name">Quality Auditor</div>
+                            <div class="agent-status">Idle</div>
+                            <div class="agent-model">phi4-mini</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Dialogue -->
+                <div class="agent-dialogue" id="agentDialogue">
+                    <h3>Agent Dialogue</h3>
+                    <div class="dialogue-container" id="dialogueContainer">
+                        <p class="dialogue-placeholder">Agent responses will appear here...</p>
+                    </div>
+                </div>
+
+                <!-- Progress Timeline -->
+                <div class="progress-timeline" id="progressTimeline">
+                    <h3>Execution Timeline</h3>
+                    <div class="timeline-container" id="timelineContainer">
+                        <!-- Timeline events will appear here -->
+                    </div>
+                </div>
+
+                <!-- Research Results -->
+                <div class="research-results" id="researchResults">
+                    <h3>Research Report</h3>
+                    <div class="results-content" id="resultsContent">
+                        <div class="placeholder">
+                            <p>Select a demo scenario or enter a custom query to begin research.</p>
+                            <p class="hint">The system will orchestrate multiple AI agents to provide comprehensive analysis.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="performance-metrics" id="performanceMetrics" style="display: none;">
+                    <h3>Performance Metrics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-label">Total Time</span>
+                            <span class="metric-value" id="totalTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Agents Used</span>
+                            <span class="metric-value" id="agentsUsed">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">VRAM Peak</span>
+                            <span class="metric-value" id="vramPeak">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Quality Score</span>
+                            <span class="metric-value" id="qualityScore">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
