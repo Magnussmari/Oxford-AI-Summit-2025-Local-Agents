@@ -27,8 +27,8 @@ Transform single AI models into orchestrated multi-agent systems running entirel
 
 ```bash
 # Clone the repository
-git clone https://github.com/Magnussmari/oxford-ai-summit-2025.git
-cd oxford-ai-summit-2025
+git clone https://github.com/Magnussmari/Oxford-ai-summit-2025-Local-Agents.git
+cd Oxford-ai-summit-2025-Local-Agents
 
 # Install Python dependencies
 pip install -r demo/requirements.txt
