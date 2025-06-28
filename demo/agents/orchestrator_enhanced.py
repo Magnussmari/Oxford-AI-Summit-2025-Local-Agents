@@ -70,6 +70,9 @@ class ProductionOrchestrator:
         if use_memory:
             similar_memories = self.memory_system.retrieve_similar(query, limit=3)
             quality_score = similar_memories[0].metadata.get("quality_score", 0) if similar_memories else 0
+            # Ensure quality_score is numeric (handle dict case)
+            if isinstance(quality_score, dict):
+                quality_score = 0
             if similar_memories and quality_score and quality_score > 0.9:
                 logger.info(f"🎯 CACHE HIT: Using high-quality cached response for query: '{query[:50]}...'")
                 logger.info(f"   Original query timestamp: {similar_memories[0].timestamp}")
