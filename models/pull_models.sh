@@ -4,7 +4,7 @@
 echo "🤖 LocalMind Collective - Model Setup"
 echo "====================================="
 echo ""
-echo "This will download ~18GB of models. Make sure you have enough disk space."
+echo "This will download ~20GB of models. Make sure you have enough disk space."
 echo ""
 
 # Check if ollama is installed

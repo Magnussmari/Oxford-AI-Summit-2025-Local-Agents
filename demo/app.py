@@ -18,13 +18,20 @@ from loguru import logger
 import subprocess
 import time
 from typing import Dict, Any
+from dotenv import load_dotenv
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from agents_presentation import PresentationOrchestrator
+
+# Load environment variables from root .env file
+root_dir = Path(__file__).parent.parent
+env_path = root_dir / ".env"
+load_dotenv(env_path)
+
+from agents.orchestrator_enhanced import ProductionOrchestrator
 from utils.system_monitor import get_system_thermal_info
 
-app = FastAPI(title="LocalMind Collective - Oxford AI Summit Demo")
+app = FastAPI(title="Magnus Smari | Oxford AI Summit 2025")
 
 # Mount static files
 static_dir = Path(__file__).parent / "static"
@@ -32,51 +39,72 @@ static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Global state
-orchestrator = PresentationOrchestrator()
+logger.info("Using enhanced production orchestrator with all improvements")
+orchestrator = ProductionOrchestrator(use_enhanced=True)
 connections = set()
 is_processing = False
 
-# Demo scenarios matching slides
+# Demo scenarios optimized for enhanced orchestrator
 DEMO_SCENARIOS = [
     {
-        "id": "quantum",
-        "title": "What is quantum computing?",
-        "description": "Simple query demonstration (30 seconds)",
-        "query": "What is quantum computing?",
-        "mode": "simple",
-        "expected_time": "~30s",
-        "agents": ["Web Harvester"],
-        "highlights": ["Basic single-agent research", "Fast response", "Clear explanation"]
-    },
-    {
-        "id": "mrna",
-        "title": "mRNA vaccine mechanisms",
-        "description": "Complex multi-agent analysis (2 minutes)",
-        "query": "Analyze mRNA vaccine mechanisms, efficacy data, and therapeutic applications",
+        "id": "local_ai_benefits",
+        "title": "Benefits of Local AI ",
+        "description": "Comprehensive analysis with fact-checking (2 minutes)",
+        "query": "Analyze the benefits and challenges of running AI systems locally versus cloud-based solutions. Research current industry trends, privacy regulations like GDPR, cost comparisons, and real-world case studies. Include specific examples of companies successfully using local AI.",
         "mode": "expert",
         "expected_time": "~2min",
-        "agents": ["Domain Specialist", "Web Harvester", "Fact Validator"],
-        "highlights": ["Multi-agent collaboration", "Expert domain analysis", "Fact validation"]
+        "agents": ["Principal Synthesizer", "Domain Specialist", "Web Harvester", "Fact Validator", "Quality Auditor"],
+        "highlights": ["Comprehensive analysis", "Fact validation", "Quality assessment", "Data sovereignty focus"]
     },
     {
-        "id": "ai_safety",
-        "title": "AI safety developments",
-        "description": "Current events research with web search",
-        "query": "What are the latest developments in AI safety and alignment research?",
-        "mode": "auto",
-        "expected_time": "~1min",
-        "agents": ["Web Harvester", "Domain Specialist"],
-        "highlights": ["Real-time web search", "Current information", "Domain expertise"]
-    },
-    {
-        "id": "local_ai",
-        "title": "Local AI deployment",
-        "description": "Technical analysis with quality audit",
-        "query": "How to deploy enterprise AI systems locally with quantized models?",
+        "id": "agent_orchestration",
+        "title": "AI Agent Orchestration Best Practices",
+        "description": "Technical deep-dive with validation (2 minutes)",
+        "query": "Research the latest best practices for orchestrating multiple AI agents in production systems. Find information about frameworks like AutoGen, LangGraph, and CrewAI. Include specific implementation patterns, error handling strategies, and performance benchmarks from recent studies.",
         "mode": "expert",
+        "expected_time": "~2min",
+        "agents": ["Principal Synthesizer", "Domain Specialist", "Web Harvester", "Fact Validator", "Quality Auditor"],
+        "highlights": ["Production patterns", "Technical validation", "Resilience focus", "Expert analysis"]
+    },
+    {
+        "id": "ai_safety_2025",
+        "title": "AI Safety & Alignment in 2025",
+        "description": "Current state analysis with web research (2 minutes)",
+        "query": "What are the latest developments in AI safety and alignment as of 2025? Research recent papers, industry initiatives, and regulatory frameworks. Include specific examples of safety measures being implemented by leading AI labs and any recent incidents or breakthroughs.",
+        "mode": "expert",
+        "expected_time": "~2min",
+        "agents": ["Principal Synthesizer", "Domain Specialist", "Web Harvester", "Fact Validator", "Quality Auditor"],
+        "highlights": ["Current research", "Web exploration", "Fact checking", "Quality review"]
+    },
+    {
+        "id": "quantum_breakthroughs",
+        "title": "Recent Quantum Computing Breakthroughs",
+        "description": "Latest developments with verification (90 seconds)",
+        "query": "What are the most significant quantum computing breakthroughs in the past 12 months? Research specific achievements by companies like IBM, Google, and IonQ. Include technical details about qubit counts, error rates, and practical applications being developed.",
+        "mode": "auto",
         "expected_time": "~90s",
-        "agents": ["Domain Specialist", "Web Harvester", "Quality Auditor"],
-        "highlights": ["Technical depth", "Practical guidance", "Quality assessment"]
+        "agents": ["Principal Synthesizer", "Domain Specialist", "Web Harvester", "Fact Validator", "Quality Auditor"],
+        "highlights": ["Recent news", "Technical validation", "Industry updates", "Fact verification"]
+    },
+    {
+        "id": "climate_ai_solutions",
+        "title": "AI for Climate Change Solutions",
+        "description": "Environmental tech analysis (2 minutes)",
+        "query": "How is AI being used to combat climate change in 2025? Research specific projects, companies, and technologies. Include examples of AI applications in renewable energy optimization, carbon capture, and climate modeling. Find recent success stories and measurable impacts.",
+        "mode": "expert",
+        "expected_time": "~2min",
+        "agents": ["Principal Synthesizer", "Domain Specialist", "Web Harvester", "Fact Validator", "Quality Auditor"],
+        "highlights": ["Real applications", "Impact metrics", "Web research", "Fact validation"]
+    },
+    {
+        "id": "edge_ai_trends",
+        "title": "Edge AI & IoT Trends 2025 📱",
+        "description": "Technology landscape analysis (90 seconds)",
+        "query": "What are the latest trends in edge AI and IoT for 2025? Research new hardware like neuromorphic chips, software frameworks, and real-world deployments. Include specific examples of edge AI applications in smartphones, autonomous vehicles, and smart cities.",
+        "mode": "auto",
+        "expected_time": "~90s",
+        "agents": ["Principal Synthesizer", "Domain Specialist", "Web Harvester", "Fact Validator", "Quality Auditor"],
+        "highlights": ["Hardware advances", "Software trends", "Market analysis", "Technical validation"]
     }
 ]
 
@@ -113,7 +141,13 @@ class PresentationDemo:
         # Callback for streaming updates
         async def stream_callback(update):
             update["elapsed"] = round(time.time() - self.start_time, 1)
-            await websocket.send_json(update)
+            try:
+                await websocket.send_json(update)
+            except Exception as e:
+                logger.warning(f"Could not send update - WebSocket may be closed: {e}")
+        
+        # Start performance monitoring task
+        performance_task = asyncio.create_task(self._send_performance_updates(websocket))
         
         try:
             # Get baseline VRAM
@@ -137,12 +171,20 @@ class PresentationDemo:
                 "result": result
             })
             
+            # Cancel performance monitoring
+            performance_task.cancel()
+            
         except Exception as e:
             logger.error(f"Demo error: {e}")
-            await websocket.send_json({
-                "type": "error",
-                "message": str(e)
-            })
+            # Cancel performance monitoring
+            performance_task.cancel()
+            try:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": str(e)
+                })
+            except Exception:
+                logger.warning("Could not send error message - WebSocket may be closed")
     
     def _get_vram_usage(self) -> Dict[str, Any]:
         """Get current VRAM usage."""
@@ -170,6 +212,22 @@ class PresentationDemo:
             "total_gb": round(mem.total / (1024**3), 1),
             "percent": mem.percent
         }
+    
+    async def _send_performance_updates(self, websocket):
+        """Send periodic performance updates to the client."""
+        try:
+            while True:
+                await asyncio.sleep(1)  # Update every second
+                vram_info = self._get_vram_usage()
+                
+                # Send performance update
+                await websocket.send_json({
+                    "type": "performance",
+                    "vram": vram_info,
+                    "timestamp": datetime.now().isoformat()
+                })
+        except Exception as e:
+            logger.debug(f"Performance monitoring stopped: {e}")
 
 # Create demo instance
 demo = PresentationDemo()
@@ -235,6 +293,23 @@ async def get_system_info():
     # Get thermal info
     thermal_info = get_system_thermal_info()
     
+    # Get enhanced features status
+    enhanced_features = {
+        "enabled": True,
+        "features": [
+            "Structured prompting",
+            "Chain-of-Thought reasoning",
+            "Resilient execution",
+            "Memory system",
+            "Agent communication",
+            "Adaptive temperature",
+            "Prompt optimization"
+        ]
+    }
+    # Get system health if available
+    if hasattr(orchestrator, 'get_system_health'):
+        enhanced_features["health"] = orchestrator.get_system_health()
+
     return {
         "platform": f"{platform.system()} {platform.release()}",
         "processor": platform.processor() or platform.machine(),
@@ -243,6 +318,8 @@ async def get_system_info():
         "cpu_cores": psutil.cpu_count(),
         "memory_gb": round(psutil.virtual_memory().total / (1024**3), 1),
         "brave_api": "Active" if os.getenv("BRAVE_API_KEY") else "Not configured",
+        "ollama_host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
+        "enhanced_mode": enhanced_features,
         "cpu_temp": thermal_info.get("cpu_temp"),
         "fans": thermal_info.get("fans"),
         "thermal_available": thermal_info.get("available", False),
@@ -290,16 +367,18 @@ async def websocket_endpoint(websocket: WebSocket):
 if __name__ == "__main__":
     import uvicorn
     
-    print("\n" + "="*60)
-    print("🚀 LocalMind Collective - Oxford AI Summit 2025 Demo")
-    print("="*60)
-    print("\n📍 Starting server at http://localhost:8000")
-    print("\n🎯 Demo Features:")
-    print("  • Live multi-agent execution with smaller models")
-    print("  • Real-time progress visualization")
-    print("  • VRAM and performance monitoring")
-    print("  • Scenarios matching presentation slides")
-    print("  • Optional web search integration")
-    print("\n" + "="*60 + "\n")
+    # Only show startup message if not disabled by launch script
+    if not os.getenv("LOCALMIND_NO_STARTUP_MSG"):
+        print("\n" + "="*60)
+        print("🚀 Magnus Smari - Local AI Agents | Oxford AI Summit 2025")
+        print("="*60)
+        print("\n📍 Starting server at http://localhost:8000")
+        print("\n🎯 Demo Features:")
+        print("  • Live multi-agent execution with smaller models")
+        print("  • Real-time progress visualization")
+        print("  • VRAM and performance monitoring")
+        print("  • Scenarios matching presentation slides")
+        print("  • Optional web search integration")
+        print("\n" + "="*60 + "\n")
     
     uvicorn.run(app, host="0.0.0.0", port=8000)

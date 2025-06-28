@@ -1,131 +1,119 @@
-// LocalMind Collective - Oxford AI Summit 2025 Demo
-// Real-time multi-agent research demonstration
+// LocalMind Collective - Modern Dashboard JavaScript
 
-class LocalMindDemo {
+class LocalMindDashboard {
     constructor() {
         this.ws = null;
+        this.currentMode = 'auto';
         this.isProcessing = false;
-        this.currentQuery = null;
         this.startTime = null;
-        this.agentStates = {
-            principal: 'idle',
-            domain: 'idle',
-            web: 'idle',
-            fact: 'idle',
-            quality: 'idle'
-        };
-        this.agentDialogue = {}; // Store streaming agent responses
+        this.performanceChart = null;
+        this.availableModels = [];
         
-        this.init();
+        // Agent output tracking
+        this.agentOutputs = {};
+        this.agentWebsites = {}; // Store website info per agent
+        
+        // Performance tracking
+        this.totalTokens = 0;
+        this.agentTokens = {}; // Track tokens per agent
+        this.activeAgents = 0;
+        this.currentVRAM = 0;
+        this.elapsedTimer = null;
+        
+        // Initialize markdown renderer
+        this.initializeMarkdown();
+        
+        this.initializeElements();
+        this.initializeWebSocket();
+        this.initializeEventListeners();
+        // this.initializeChart(); // Removed performance chart
+        this.loadAvailableModels();
+        this.updateSystemInfo();
+        this.loadDemoScenarios();
     }
     
-    async init() {
-        // Load system info
-        await this.loadSystemInfo();
-        
-        // Load models
-        await this.loadModels();
-        
-        // Load scenarios
-        await this.loadScenarios();
-        
-        // Setup WebSocket
-        this.setupWebSocket();
-        
-        // Setup event listeners
-        this.setupEventListeners();
-        
-        // Update system info periodically
-        setInterval(() => this.loadSystemInfo(), 30000);
-    }
-    
-    async loadSystemInfo() {
-        try {
-            const response = await fetch('/api/system');
-            const data = await response.json();
-            
-            document.getElementById('platform').textContent = data.platform;
-            document.getElementById('gpu').textContent = data.gpu;
-            document.getElementById('vram').textContent = `${data.vram.used_gb}/${data.vram.total_gb}GB (${data.vram.percent}%)`;
-            document.getElementById('webSearch').textContent = data.brave_api;
-            
-            // CPU Temperature
-            const cpuTempEl = document.getElementById('cpuTemp');
-            if (data.cpu_temp !== null && data.cpu_temp !== undefined) {
-                cpuTempEl.textContent = `${data.cpu_temp}°C`;
-                cpuTempEl.style.color = data.cpu_temp > 80 ? 'var(--accent-orange)' : 'var(--accent-green)';
-            } else {
-                cpuTempEl.textContent = 'N/A';
-                cpuTempEl.style.color = 'var(--text-secondary)';
-            }
-            
-            // Fan Speed
-            const fanSpeedEl = document.getElementById('fanSpeed');
-            if (data.fans) {
-                const fanList = Object.entries(data.fans).map(([name, rpm]) => `${rpm} RPM`).join(', ');
-                fanSpeedEl.textContent = fanList;
-                fanSpeedEl.style.color = 'var(--accent-green)';
-            } else {
-                fanSpeedEl.textContent = 'N/A';
-                fanSpeedEl.style.color = 'var(--text-secondary)';
-            }
-        } catch (error) {
-            console.error('Failed to load system info:', error);
-        }
-    }
-    
-    async loadModels() {
-        try {
-            const response = await fetch('/api/models');
-            const models = await response.json();
-            
-            const modelList = document.getElementById('modelList');
-            modelList.innerHTML = models.map(model => `
-                <div class="model-item ${!model.available ? 'model-unavailable' : ''}">
-                    <span class="model-name">${model.id}</span>
-                    <span class="model-size">${model.size} • ${model.context}</span>
-                </div>
-            `).join('');
-        } catch (error) {
-            console.error('Failed to load models:', error);
-        }
-    }
-    
-    async loadScenarios() {
-        try {
-            const response = await fetch('/api/scenarios');
-            const scenarios = await response.json();
-            
-            const scenariosContainer = document.getElementById('scenarios');
-            scenariosContainer.innerHTML = scenarios.map(scenario => `
-                <div class="scenario-card" data-id="${scenario.id}" data-query="${scenario.query}" data-mode="${scenario.mode}">
-                    <div class="scenario-title">${scenario.title}</div>
-                    <div class="scenario-description">${scenario.description}</div>
-                    <div class="scenario-meta">
-                        <span>⏱️ ${scenario.expected_time}</span>
-                        <span>🤖 ${scenario.agents.length} agents</span>
-                    </div>
-                </div>
-            `).join('');
-            
-            // Add click handlers
-            document.querySelectorAll('.scenario-card').forEach(card => {
-                card.addEventListener('click', () => this.runScenario(card));
+    initializeMarkdown() {
+        // Configure marked.js for better markdown rendering
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                highlight: function(code, lang) {
+                    if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
+                        try {
+                            return hljs.highlight(code, { language: lang }).value;
+                        } catch (err) {}
+                    }
+                    return code;
+                },
+                langPrefix: 'hljs language-',
+                breaks: true,
+                gfm: true
             });
-        } catch (error) {
-            console.error('Failed to load scenarios:', error);
         }
     }
     
-    setupWebSocket() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
+    initializeElements() {
+        // Input elements
+        this.researchInput = document.getElementById('researchInput');
+        this.modeButtons = document.querySelectorAll('.mode-btn');
+        this.actionButtons = document.querySelectorAll('.action-btn');
         
+        // Display elements
+        this.agentGrid = document.getElementById('agentGrid');
+        this.resultsContent = document.getElementById('resultsContent');
+        this.timeline = document.getElementById('timeline');
+        this.elapsedTimeTimeline = document.getElementById('elapsedTimeTimeline'); // Timeline panel time
+        
+        // Metrics elements (removed from UI)
+        // this.totalTime = document.getElementById('totalTime');
+        // this.tokensGenerated = document.getElementById('tokensGenerated');
+        // this.agentsUsed = document.getElementById('agentsUsed');
+        // this.successRate = document.getElementById('successRate');
+        
+        // System info
+        this.gpuInfo = document.getElementById('gpuInfo');
+        this.webSearchStatus = document.getElementById('webSearchStatus');
+        this.enhancedModeStatus = document.getElementById('enhancedModeStatus');
+        this.activeAgentCount = document.getElementById('activeAgentCount');
+        
+        // Header stats (these are in the header)
+        this.totalTokensDisplay = document.getElementById('totalTokens');
+        this.elapsedTimeDisplay = document.getElementById('elapsedTime'); // This is the header one
+        this.activeAgentCountHeader = document.getElementById('activeAgentCountHeader');
+        
+        // Initialize agents
+        this.initializeAgents();
+    }
+    
+    initializeAgents() {
+        const researchAgents = [
+            { id: 'principal', name: 'Principal Synthesizer', icon: '🧠', model: 'deepseek-r1:8b' },
+            { id: 'domain', name: 'Domain Specialist', icon: '🎓', model: 'qwen3:8b' },
+            { id: 'web', name: 'Web Harvester', icon: '🌐', model: 'qwen3:4b' },
+            { id: 'fact', name: 'Fact Validator', icon: '✅', model: 'phi4-mini' },
+            { id: 'quality', name: 'Quality Auditor', icon: '⭐', model: 'phi4-mini' }
+        ];
+        
+        // Display research agents
+        this.displayAgents(researchAgents);
+    }
+    
+    displayAgents(agents) {
+        this.agentGrid.innerHTML = agents.map(agent => `
+            <div class="agent-card" data-agent="${agent.id}">
+                <div class="agent-icon">${agent.icon}</div>
+                <div class="agent-name">${agent.name}</div>
+                <div class="agent-status">Idle</div>
+            </div>
+        `).join('');
+    }
+    
+    initializeWebSocket() {
+        const wsUrl = `ws://${window.location.host}/ws`;
         this.ws = new WebSocket(wsUrl);
         
         this.ws.onopen = () => {
             console.log('WebSocket connected');
-            this.sendPing();
+            this.updateConnectionStatus(true);
         };
         
         this.ws.onmessage = (event) => {
@@ -135,161 +123,218 @@ class LocalMindDemo {
         
         this.ws.onerror = (error) => {
             console.error('WebSocket error:', error);
+            this.updateConnectionStatus(false);
         };
         
         this.ws.onclose = () => {
             console.log('WebSocket disconnected');
-            setTimeout(() => this.setupWebSocket(), 5000);
+            this.updateConnectionStatus(false);
+            // Attempt to reconnect after 2 seconds
+            setTimeout(() => this.initializeWebSocket(), 2000);
         };
     }
     
-    sendPing() {
-        if (this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ type: 'ping' }));
-            setTimeout(() => this.sendPing(), 30000);
-        }
-    }
-    
-    setupEventListeners() {
-        // Custom query button
-        document.getElementById('runCustom').addEventListener('click', () => {
-            const query = document.getElementById('customQuery').value.trim();
-            const mode = document.getElementById('queryMode').value;
-            
-            if (query) {
-                this.runResearch(query, mode);
+    initializeEventListeners() {
+        // Research input
+        this.researchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.startResearch();
             }
         });
         
-        // Enter key in custom query
-        document.getElementById('customQuery').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                document.getElementById('runCustom').click();
+        // Mode buttons
+        this.modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.currentMode = btn.dataset.mode;
+                this.modeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+        
+        // Quick action buttons
+        this.actionButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.researchInput.value = btn.dataset.prompt;
+                this.startResearch();
+            });
+        });
+        
+        // Voice input button
+        document.querySelector('.voice-btn')?.addEventListener('click', () => {
+            this.startVoiceInput();
+        });
+        
+        // Panel action buttons
+        document.querySelectorAll('.action-icon').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = btn.getAttribute('title').toLowerCase();
+                this.handlePanelAction(action);
+            });
+        });
+    }
+    
+    initializeChart() {
+        const ctx = document.getElementById('performanceChart');
+        if (!ctx) return;
+        
+        this.performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Token Generation Rate',
+                    data: [],
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        display: false
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                }
             }
         });
     }
     
-    runScenario(card) {
-        if (this.isProcessing) return;
-        
-        // Highlight active scenario
-        document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        
-        const query = card.dataset.query;
-        const mode = card.dataset.mode;
-        
-        this.runResearch(query, mode);
-    }
-    
-    runResearch(query, mode) {
-        if (this.isProcessing || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            return;
-        }
+    startResearch() {
+        const query = this.researchInput.value.trim();
+        if (!query || this.isProcessing) return;
         
         this.isProcessing = true;
-        this.currentQuery = query;
         this.startTime = Date.now();
-        
-        // Update UI
-        document.getElementById('runCustom').disabled = true;
-        document.getElementById('runCustom').textContent = 'Processing...';
-        
-        // Clear previous results
         this.clearResults();
         
-        // Reset agent states
-        this.resetAgentStates();
+        // Reset agent display
+        this.initializeAgents();
         
-        // Show metrics panel
-        document.getElementById('performanceMetrics').style.display = 'block';
+        // Start elapsed time counter
+        this.startElapsedTimer();
         
         // Send research request
         this.ws.send(JSON.stringify({
             type: 'research',
             query: query,
-            mode: mode
+            mode: this.currentMode
         }));
+        
+        // Add to timeline
+        this.addTimelineEvent('Research started', 'info');
     }
     
     handleWebSocketMessage(data) {
         switch (data.type) {
             case 'init':
-                this.addTimelineEvent('Starting research...', 'phase-analysis');
+                this.addTimelineEvent('Initializing research system', 'info');
                 break;
                 
             case 'phase':
-                this.handlePhaseUpdate(data);
-                break;
-                
-            case 'agent_thinking':
-                this.updateAgentState(data.agent, 'thinking');
-                this.addTimelineEvent(`${data.agent} processing with ${data.model}`, 'agent-thinking');
-                this.initializeAgentDialogue(data.agent);
-                break;
-                
-            case 'agent_stream':
-                this.handleAgentStream(data);
-                break;
-                
-            case 'agent_response':
-                this.updateAgentState(data.agent, 'active');
-                if (data.complete) {
-                    this.addTimelineEvent(`${data.agent} completed (${data.tokens} tokens)`, 'agent-response');
+                // Handle phase messages from backend
+                if (data.agent) {
+                    this.updateAgentStatus(data.agent, 'thinking', `${data.phase} phase`);
+                    this.addTimelineEvent(`${data.agent} - ${data.phase} phase started`, 'agent');
+                    this.updateActiveAgentCount();
                 }
                 break;
                 
-            case 'agent_error':
-                this.updateAgentState(data.agent, 'idle');
-                this.addTimelineEvent(`${data.agent} error: ${data.error}`, 'agent-error');
-                this.appendAgentDialogue(data.agent, `\n\n⚠️ Error: ${data.error}`);
+            case 'agent_start':
+                this.updateAgentStatus(data.agent, 'thinking', data.message);
+                this.addTimelineEvent(`${data.agent} started`, 'agent');
+                this.updateActiveAgentCount();
                 break;
                 
-            case 'web_search':
-                this.updateAgentState('Web Harvester', 'thinking');
-                this.addTimelineEvent('Performing live web search...', 'web-search');
+            case 'performance':
+                if (data.vram) {
+                    this.currentVRAM = data.vram.used_gb || 0;
+                }
+                break;
+                
+            case 'agent_stream':
+                this.appendAgentOutput(data.agent, data.chunk || data.content || '');
+                if (data.tokens && data.agent) {
+                    this.updateTokenCount(data.agent, data.tokens);
+                }
+                break;
+                
+            case 'agent_complete':
+                this.updateAgentStatus(data.agent, 'complete', 'Completed');
+                this.addTimelineEvent(`${data.agent} completed`, 'success');
+                this.updateActiveAgentCount();
+                
+                // Append any stored website info for this agent
+                if (this.agentWebsites && this.agentWebsites[data.agent]) {
+                    this.appendAgentOutput(data.agent, this.agentWebsites[data.agent]);
+                    delete this.agentWebsites[data.agent];
+                }
+                break;
+                
+            case 'agent_response':
+                // Handle completion from agent_response type
+                if (data.agent && data.complete) {
+                    this.updateAgentStatus(data.agent, 'complete', 'Completed');
+                    this.updateActiveAgentCount();
+                    // Update final token count for this agent
+                    if (data.tokens) {
+                        this.updateTokenCount(data.agent, data.tokens);
+                    }
+                }
                 break;
                 
             case 'web_results':
-                this.addTimelineEvent(`Found ${data.count} web results`, 'web-results');
+                // Handle web search results
+                if (data.websites && data.websites.length > 0) {
+                    this.addTimelineEvent(
+                        `Web Harvester explored ${data.websites.length} websites`,
+                        'agent'
+                    );
+                    // Add websites info to a special section
+                    const websiteList = data.websites.map(w => 
+                        `• [${w.title}](${w.url})`
+                    ).join('\n');
+                    
+                    const websiteInfo = `\n\n📌 **Websites Explored:**\n${websiteList}\n`;
+                    
+                    // Store this info to append after agent completes
+                    if (!this.agentWebsites) this.agentWebsites = {};
+                    this.agentWebsites[data.agent] = websiteInfo;
+                }
                 break;
                 
             case 'complete':
-                this.handleComplete(data.result);
+                this.handleResearchComplete(data.result);
                 break;
                 
             case 'error':
                 this.handleError(data.message);
                 break;
                 
-            case 'pong':
-                // Heartbeat response
+            case 'performance':
+                this.updatePerformanceMetrics(data.data);
                 break;
         }
     }
     
-    handlePhaseUpdate(data) {
-        const phaseNames = {
-            analysis: 'Query Analysis',
-            research: 'Research Phase',
-            validation: 'Fact Validation',
-            synthesis: 'Synthesis Phase',
-            quality: 'Quality Audit'
-        };
-        
-        const phaseName = phaseNames[data.phase] || data.phase;
-        
-        if (data.agent) {
-            this.updateAgentState(data.agent, 'active');
-            this.addTimelineEvent(`${phaseName}: ${data.agent}`, `phase-${data.phase}`);
-        } else if (data.agents) {
-            this.addTimelineEvent(`${phaseName}: ${data.agents.join(', ')}`, `phase-${data.phase}`);
-            data.agents.forEach(agent => this.updateAgentState(agent, 'pending'));
-        }
-    }
-    
-    updateAgentState(agentName, state) {
-        const agentMap = {
+    updateAgentStatus(agentName, status, message = '') {
+        // Map full agent names to their IDs
+        const agentNameMap = {
             'Principal Synthesizer': 'principal',
             'Domain Specialist': 'domain',
             'Web Harvester': 'web',
@@ -297,315 +342,523 @@ class LocalMindDemo {
             'Quality Auditor': 'quality'
         };
         
-        const agentId = agentMap[agentName] || agentName.toLowerCase();
-        this.agentStates[agentId] = state;
+        // Try to find agent by ID or by mapped name
+        const agentId = agentNameMap[agentName] || agentName;
+        const agentCard = this.agentGrid.querySelector(`[data-agent="${agentId}"]`);
+        if (!agentCard) return;
         
-        const card = document.querySelector(`[data-agent="${agentId}"]`);
-        if (card) {
-            card.classList.remove('active', 'thinking');
-            if (state === 'active') card.classList.add('active');
-            if (state === 'thinking') card.classList.add('thinking');
-            
-            const statusEl = card.querySelector('.agent-status');
-            if (statusEl) {
-                const statusText = {
-                    idle: 'Idle',
-                    pending: 'Pending',
-                    thinking: 'Processing...',
-                    active: 'Active'
-                };
-                statusEl.textContent = statusText[state] || state;
-            }
+        agentCard.classList.remove('active', 'thinking', 'complete');
+        if (status === 'thinking') {
+            agentCard.classList.add('thinking');
+            agentCard.querySelector('.agent-status').textContent = 'Processing...';
+        } else if (status === 'complete') {
+            agentCard.classList.add('complete');
+            agentCard.querySelector('.agent-status').textContent = 'Complete';
+        } else {
+            agentCard.querySelector('.agent-status').textContent = 'Idle';
         }
     }
     
-    addTimelineEvent(content, className = '') {
-        const container = document.getElementById('timelineContainer');
-        const elapsed = this.startTime ? ((Date.now() - this.startTime) / 1000).toFixed(1) : '0.0';
+    appendAgentOutput(agent, content) {
+        // Initialize agent output if not exists
+        if (!this.agentOutputs[agent]) {
+            this.agentOutputs[agent] = '';
+            
+            // Clear empty state or loading state if present ONLY once
+            const currentContent = this.resultsContent.innerHTML;
+            if (currentContent.includes('empty-state') || currentContent.includes('loading-state')) {
+                this.resultsContent.innerHTML = '';
+            }
+        }
         
-        const event = document.createElement('div');
-        event.className = `timeline-event ${className}`;
-        event.innerHTML = `
-            <span class="timeline-time">${elapsed}s</span>
-            <span class="timeline-content">${content}</span>
-        `;
+        // Check if agent section already exists
+        const agentId = `agent-output-${agent.replace(/\s+/g, '-')}`;
+        let agentSection = document.getElementById(agentId);
         
-        container.appendChild(event);
-        container.scrollTop = container.scrollHeight;
+        if (!agentSection) {
+            // Create initial section for this agent only if it doesn't exist
+            agentSection = document.createElement('div');
+            agentSection.className = 'agent-output';
+            agentSection.id = agentId;
+            agentSection.innerHTML = `
+                <h3 style="color: var(--primary-blue); margin-bottom: var(--space-2);">${agent}</h3>
+                <div class="agent-content"></div>
+            `;
+            this.resultsContent.appendChild(agentSection);
+        }
+        
+        // Append content to existing agent output
+        this.agentOutputs[agent] += content;
+        
+        // Update the agent's content section with smooth transition
+        const contentDiv = agentSection.querySelector('.agent-content');
+        if (contentDiv) {
+            // Use requestAnimationFrame to prevent flashing
+            requestAnimationFrame(() => {
+                contentDiv.innerHTML = this.formatContent(this.agentOutputs[agent]);
+            });
+        }
     }
     
-    handleComplete(result) {
+    formatContent(content) {
+        // Handle undefined or null content
+        if (!content) return '';
+        
+        // Use marked.js for proper markdown rendering if available
+        if (typeof marked !== 'undefined') {
+            try {
+                const html = marked.parse(content);
+                // Apply syntax highlighting if available
+                if (typeof hljs !== 'undefined') {
+                    setTimeout(() => {
+                        document.querySelectorAll('pre code').forEach((block) => {
+                            if (!block.classList.contains('hljs')) {
+                                hljs.highlightElement(block);
+                            }
+                        });
+                    }, 100);
+                }
+                return html;
+            } catch (error) {
+                console.warn('Markdown parsing error:', error);
+                // Fallback to simple formatting
+            }
+        }
+        
+        // Fallback: Simple markdown-like formatting
+        return content
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/#{3}\s*(.*)/g, '<h3>$1</h3>')
+            .replace(/#{2}\s*(.*)/g, '<h2>$1</h2>')
+            .replace(/#{1}\s*(.*)/g, '<h1>$1</h1>')
+            .replace(/^\s*[-*+]\s+(.*)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            .replace(/\n/g, '<br>');
+    }
+    
+    handleResearchComplete(result) {
         this.isProcessing = false;
+        this.stopElapsedTimer();
         
-        // Reset button
-        document.getElementById('runCustom').disabled = false;
-        document.getElementById('runCustom').textContent = 'Run Research';
+        // Reset agent outputs for next query
+        this.agentOutputs = {};
+        this.agentTokens = {};
         
-        // Reset agent states
-        this.resetAgentStates();
+        // Don't replace agent outputs - append final synthesis if provided
+        if (result.synthesis) {
+            const finalSection = document.createElement('div');
+            finalSection.className = 'final-result';
+            finalSection.style.cssText = 'margin-top: var(--space-6); padding-top: var(--space-4); border-top: 2px solid var(--border-color);';
+            finalSection.innerHTML = `
+                <h2 style="color: var(--primary-blue); margin-bottom: var(--space-4);">Final Synthesis</h2>
+                <div>${this.formatContent(result.synthesis)}</div>
+            `;
+            this.resultsContent.appendChild(finalSection);
+        }
         
-        // Display results
-        this.displayResults(result);
+        // Update metrics (now in header)
+        const elapsed = (Date.now() - this.startTime) / 1000;
+        // this.totalTime.textContent = this.formatTime(elapsed);
+        // this.tokensGenerated.textContent = result.total_tokens || 0;
+        // this.agentsUsed.textContent = result.agents_used?.length || 0;
+        // this.successRate.textContent = '100%';
         
-        // Update metrics
-        this.updateMetrics(result);
+        // Update final header metrics
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = Math.floor(elapsed % 60);
+        const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         
-        // Add completion event
-        this.addTimelineEvent('Research completed successfully', 'phase-complete');
+        // Final update of header stats
+        if (this.totalTokensDisplay) {
+            this.totalTokensDisplay.textContent = result.total_tokens || this.totalTokens;
+        }
+        if (this.elapsedTimeDisplay) {
+            this.elapsedTimeDisplay.textContent = formatted;
+        }
+        if (this.activeAgentCountHeader) {
+            this.activeAgentCountHeader.textContent = '0';
+        }
+        
+        // Add to timeline
+        this.addTimelineEvent('Research completed successfully', 'success');
+        
+        // Update chart (removed)
+        // this.updateChart();
     }
     
     handleError(message) {
         this.isProcessing = false;
+        this.stopElapsedTimer();
         
-        // Reset button
-        document.getElementById('runCustom').disabled = false;
-        document.getElementById('runCustom').textContent = 'Run Research';
-        
-        // Reset agent states
-        this.resetAgentStates();
-        
-        // Show error
-        const resultsContent = document.getElementById('resultsContent');
-        resultsContent.innerHTML = `
-            <div style="color: var(--accent-red); text-align: center; padding: 40px;">
-                <h4>Error occurred during research</h4>
+        this.resultsContent.innerHTML = `
+            <div class="error-state" style="color: var(--accent-red); text-align: center; padding: var(--space-8);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: var(--space-4);">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
                 <p>${message}</p>
             </div>
         `;
         
-        this.addTimelineEvent(`Error: ${message}`, 'phase-error');
-    }
-    
-    displayResults(result) {
-        const resultsContent = document.getElementById('resultsContent');
-        
-        // Format the report with proper markdown parsing
-        let formattedReport = this.parseMarkdown(result.report);
-        
-        resultsContent.innerHTML = `
-            <div class="query-display">
-                <h4>Query</h4>
-                <p>${result.query}</p>
-            </div>
-            
-            <div class="agents-used">
-                <h4>Agents Deployed</h4>
-                <p>${result.agents_used.join(' → ')}</p>
-            </div>
-            
-            <div class="report-content">
-                <h4>Research Report</h4>
-                ${formattedReport}
-            </div>
-            
-            ${result.web_search_used ? '<p style="font-size: 12px; color: var(--accent-green); margin-top: 20px;">✓ Live web search data included</p>' : ''}
-        `;
-    }
-    
-    parseMarkdown(text) {
-        // Enhanced markdown parser for clean report display
-        let html = text;
-        
-        // Headers
-        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-        
-        // Bold and italic
-        html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-        html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-        
-        // Lists
-        html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
-        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-        html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-        
-        // Wrap consecutive list items
-        html = html.replace(/(<li>.*<\/li>\n)+/g, (match) => {
-            const isOrdered = match.includes('1.');
-            return isOrdered ? `<ol>${match}</ol>` : `<ul>${match}</ul>`;
-        });
-        
-        // Code blocks
-        html = html.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>');
-        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-        
-        // Blockquotes
-        html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
-        
-        // Paragraphs
-        html = html.split('\n\n').map(paragraph => {
-            paragraph = paragraph.trim();
-            if (paragraph && !paragraph.startsWith('<')) {
-                return `<p>${paragraph}</p>`;
-            }
-            return paragraph;
-        }).join('\n');
-        
-        // Line breaks
-        html = html.replace(/\n/g, '<br>');
-        
-        // Clean up
-        html = html.replace(/<br><h/g, '<h');
-        html = html.replace(/<br><ul>/g, '<ul>');
-        html = html.replace(/<br><ol>/g, '<ol>');
-        html = html.replace(/<\/ul><br>/g, '</ul>');
-        html = html.replace(/<\/ol><br>/g, '</ol>');
-        
-        return html;
-    }
-    
-    updateMetrics(result) {
-        const metrics = result.metrics || {};
-        
-        document.getElementById('totalTime').textContent = `${metrics.total_time || '-'}s`;
-        document.getElementById('agentsUsed').textContent = metrics.agent_count || '-';
-        
-        if (metrics.vram_peak) {
-            const vramDelta = (metrics.vram_peak.used_gb - metrics.vram_baseline.used_gb).toFixed(1);
-            document.getElementById('vramPeak').textContent = `+${vramDelta}GB`;
-        } else {
-            document.getElementById('vramPeak').textContent = '-';
-        }
-        
-        if (result.quality_score) {
-            document.getElementById('qualityScore').textContent = `${result.quality_score.overall}/10`;
-        } else {
-            document.getElementById('qualityScore').textContent = '-';
-        }
+        this.addTimelineEvent(`Error: ${message}`, 'error');
     }
     
     clearResults() {
-        document.getElementById('resultsContent').innerHTML = `
-            <div class="placeholder">
-                <div class="loading"></div>
-                <p style="margin-top: 20px;">Orchestrating AI agents...</p>
+        this.resultsContent.innerHTML = `
+            <div class="loading-state" style="text-align: center; padding: var(--space-8);">
+                <div class="loading" style="margin: 0 auto var(--space-2);"></div>
+                <p style="color: var(--gray-500); font-size: 14px;">Processing your research query...</p>
             </div>
         `;
         
-        document.getElementById('timelineContainer').innerHTML = '';
+        this.timeline.innerHTML = '';
+        // Metrics now in header
+        // this.totalTime.textContent = '--:--';
+        // this.tokensGenerated.textContent = '0';
+        // this.agentsUsed.textContent = '0';
+        // this.successRate.textContent = '--%';
         
-        // Clear agent dialogue
-        this.agentDialogue = {};
-        this.updateAgentDialogueDisplay();
-        
-        // Show agent dialogue section
-        const dialogueSection = document.getElementById('agentDialogue');
-        if (dialogueSection) {
-            dialogueSection.style.display = 'block';
-        }
-        
-        // Reset metrics
-        document.getElementById('totalTime').textContent = '-';
-        document.getElementById('agentsUsed').textContent = '-';
-        document.getElementById('vramPeak').textContent = '-';
-        document.getElementById('qualityScore').textContent = '-';
-    }
-    
-    resetAgentStates() {
-        Object.keys(this.agentStates).forEach(agent => {
-            this.agentStates[agent] = 'idle';
-            this.updateAgentState(agent, 'idle');
+        // Reset all agent statuses
+        this.agentGrid.querySelectorAll('.agent-card').forEach(card => {
+            card.classList.remove('active', 'thinking', 'complete');
+            card.querySelector('.agent-status').textContent = 'Idle';
         });
     }
     
-    initializeAgentDialogue(agentName) {
-        if (!this.agentDialogue[agentName]) {
-            this.agentDialogue[agentName] = '';
-            this.updateAgentDialogueDisplay();
-        }
+    addTimelineEvent(message, type = 'info') {
+        const time = this.startTime ? ((Date.now() - this.startTime) / 1000).toFixed(1) : '0.0';
+        const timelineItem = document.createElement('div');
+        timelineItem.className = 'timeline-item';
+        
+        const dotColor = {
+            info: 'var(--gray-400)',
+            agent: 'var(--primary-blue)',
+            success: 'var(--accent-green)',
+            error: 'var(--accent-red)'
+        }[type] || 'var(--gray-400)';
+        
+        timelineItem.innerHTML = `
+            <div class="timeline-time">${time}s</div>
+            <div class="timeline-dot" style="background: ${dotColor}"></div>
+            <div class="timeline-content">${message}</div>
+        `;
+        
+        this.timeline.appendChild(timelineItem);
+        this.timeline.scrollTop = this.timeline.scrollHeight;
     }
     
-    handleAgentStream(data) {
-        const { agent, chunk } = data;
-        if (!this.agentDialogue[agent]) {
-            this.agentDialogue[agent] = '';
-        }
-        this.agentDialogue[agent] += chunk;
-        this.updateAgentDialogueDisplay();
-    }
-    
-    appendAgentDialogue(agentName, text) {
-        if (!this.agentDialogue[agentName]) {
-            this.agentDialogue[agentName] = '';
-        }
-        this.agentDialogue[agentName] += text;
-        this.updateAgentDialogueDisplay();
-    }
-    
-    updateAgentDialogueDisplay() {
-        // Check if agent dialogue section exists, if not create it
-        let dialogueSection = document.getElementById('agentDialogue');
-        if (!dialogueSection) {
-            const container = document.querySelector('.results-panel');
-            const monitorSection = document.getElementById('agentMonitor');
+    startElapsedTimer() {
+        this.totalTokens = 0;
+        this.agentTokens = {}; // Reset per-agent token counts
+        this.activeAgents = 0;
+        
+        this.elapsedInterval = setInterval(() => {
+            const elapsed = (Date.now() - this.startTime) / 1000;
+            const formatted = this.formatTime(elapsed);
             
-            dialogueSection = document.createElement('div');
-            dialogueSection.className = 'agent-dialogue';
-            dialogueSection.id = 'agentDialogue';
-            dialogueSection.innerHTML = '<h3>Agent Dialogue</h3><div class="dialogue-container" id="dialogueContainer"></div>';
+            // Update header displays
+            if (this.elapsedTimeDisplay) {
+                this.elapsedTimeDisplay.textContent = formatted;
+            }
             
-            // Insert after agent monitor
-            monitorSection.parentNode.insertBefore(dialogueSection, monitorSection.nextSibling);
+            if (this.totalTokensDisplay) {
+                this.totalTokensDisplay.textContent = this.totalTokens.toLocaleString();
+            }
+            
+            if (this.activeAgentCountHeader) {
+                this.activeAgentCountHeader.textContent = this.activeAgents;
+            }
+            
+            // Update elapsed time in timeline panel
+            const timelineElapsed = document.getElementById('elapsedTimeTimeline');
+            if (timelineElapsed) {
+                timelineElapsed.textContent = formatted;
+            }
+            
+            // Header metrics are already updated above
+        }, 100);
+    }
+    
+    stopElapsedTimer() {
+        if (this.elapsedInterval) {
+            clearInterval(this.elapsedInterval);
+            this.elapsedInterval = null;
+        }
+    }
+    
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = (seconds % 60).toFixed(1);
+        return `${mins.toString().padStart(2, '0')}:${secs.padStart(4, '0')}`;
+    }
+    
+    updateSystemInfo() {
+        // Fetch system info from API
+        fetch('/api/system')
+            .then(res => res.json())
+            .then(data => {
+                this.gpuInfo.textContent = `${data.gpu || 'Not detected'}`;
+                
+                // Update web search status
+                this.webSearchStatus.classList.toggle('active', data.brave_api === 'Active');
+                
+                // Enhanced mode is always active
+                this.enhancedModeStatus.classList.add('active');
+            })
+            .catch(err => console.error('Failed to fetch system info:', err));
+        
+        // Refresh every 5 seconds
+        setTimeout(() => this.updateSystemInfo(), 5000);
+    }
+    
+    updateConnectionStatus(connected) {
+        const statusDot = document.querySelector('.status-dot');
+        if (statusDot) {
+            statusDot.classList.toggle('active', connected);
+        }
+    }
+    
+    updateActiveAgentCount() {
+        const activeCount = this.agentGrid.querySelectorAll('.agent-card.thinking').length;
+        this.activeAgentCount.textContent = `${activeCount} Active`;
+        this.activeAgents = activeCount;
+    }
+    
+    updateTokenCount(agent, tokens) {
+        // Track tokens per agent
+        this.agentTokens[agent] = tokens;
+        
+        // Calculate total tokens across all agents
+        this.totalTokens = Object.values(this.agentTokens).reduce((sum, count) => sum + count, 0);
+    }
+    
+    updateHeaderMetrics(metrics) {
+        // Header metrics are updated directly in the interval
+        // This method is no longer needed but kept for compatibility
+    }
+    
+    async loadAvailableModels() {
+        try {
+            const response = await fetch('/api/models');
+            this.availableModels = await response.json();
+            this.renderAvailableModels();
+        } catch (error) {
+            console.error('Failed to load models:', error);
+        }
+    }
+    
+    renderAvailableModels() {
+        const container = document.getElementById('availableModels');
+        if (!container) return;
+        
+        container.innerHTML = this.availableModels.map(model => {
+            const statusClass = model.available ? 'available' : 'missing';
+            const statusIcon = model.available ? '✅' : '❌';
+            return `
+                <div class="model-item ${statusClass}">
+                    <span>${statusIcon} ${model.id}</span>
+                    <span class="model-size">${model.size}</span>
+                </div>
+            `;
+        }).join('');
+        
+        // Add click handlers
+        container.querySelectorAll('.query-item').forEach(item => {
+            item.addEventListener('click', () => {
+                this.researchInput.value = item.dataset.query;
+                this.startResearch();
+            });
+        });
+    }
+    
+    
+    updateChart() {
+        if (!this.performanceChart) return;
+        
+        // Add random data point for demo
+        const currentData = this.performanceChart.data.datasets[0].data;
+        currentData.push(Math.random() * 100 + 50);
+        
+        // Keep only last 20 points
+        if (currentData.length > 20) {
+            currentData.shift();
         }
         
-        const dialogueContainer = document.getElementById('dialogueContainer');
-        const agents = Object.keys(this.agentDialogue).filter(agent => this.agentDialogue[agent]);
-        
-        if (agents.length === 0) {
-            dialogueContainer.innerHTML = '<p class="dialogue-placeholder">Agent responses will appear here...</p>';
+        this.performanceChart.data.labels = currentData.map((_, i) => i);
+        this.performanceChart.update();
+    }
+    
+    startVoiceInput() {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Voice input is not supported in your browser');
             return;
         }
         
-        dialogueContainer.innerHTML = agents.map(agent => `
-            <div class="agent-dialogue-item">
-                <div class="agent-dialogue-header">
-                    <span class="agent-icon">${this.getAgentIcon(agent)}</span>
-                    <span class="agent-name">${agent}</span>
-                </div>
-                <div class="agent-dialogue-content">
-                    ${this.formatAgentResponse(this.agentDialogue[agent])}
-                </div>
-            </div>
-        `).join('');
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
         
-        // Auto-scroll to latest content
-        dialogueContainer.scrollTop = dialogueContainer.scrollHeight;
-    }
-    
-    getAgentIcon(agentName) {
-        const icons = {
-            'Principal Synthesizer': '🧠',
-            'Domain Specialist': '🎓',
-            'Web Harvester': '🌐',
-            'Fact Validator': '✓',
-            'Quality Auditor': '⭐'
+        recognition.onstart = () => {
+            this.researchInput.placeholder = 'Listening...';
         };
-        return icons[agentName] || '🤖';
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            this.researchInput.value = transcript;
+            this.researchInput.placeholder = 'What would you like to research?';
+        };
+        
+        recognition.onerror = (event) => {
+            console.error('Voice recognition error:', event.error);
+            this.researchInput.placeholder = 'What would you like to research?';
+        };
+        
+        recognition.start();
     }
     
-    formatAgentResponse(text) {
-        // Convert markdown-like formatting to HTML
-        return text
-            .replace(/\n\n/g, '</p><p>')
-            .replace(/\n/g, '<br>')
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/^- (.+)$/gm, '<li>$1</li>')
-            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-            .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-            .replace(/(<li>.*<\/li>)/s, '<ol>$1</ol>')
-            .replace(/^### (.+)$/gm, '<h4>$1</h4>')
-            .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-            .replace(/^# (.+)$/gm, '<h2>$1</h2>')
-            .replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
-            .replace(/`([^`]+)`/g, '<code>$1</code>');
+    handlePanelAction(action) {
+        switch (action) {
+            case 'copy':
+                this.copyResults();
+                break;
+            case 'download':
+                this.downloadResults();
+                break;
+            case 'fullscreen':
+                this.toggleFullscreen();
+                break;
+        }
+    }
+    
+    copyResults() {
+        const text = this.resultsContent.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            // Show success notification
+            this.showNotification('Results copied to clipboard');
+        });
+    }
+    
+    downloadResults() {
+        const text = this.resultsContent.innerText;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `research-${Date.now()}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    toggleFullscreen() {
+        const panel = document.querySelector('.results-panel');
+        if (panel.classList.contains('fullscreen')) {
+            panel.classList.remove('fullscreen');
+        } else {
+            panel.classList.add('fullscreen');
+        }
+    }
+    
+    showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            bottom: var(--space-4);
+            right: var(--space-4);
+            background: var(--gray-900);
+            color: white;
+            padding: var(--space-3) var(--space-4);
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideDown 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    loadDemoScenarios() {
+        fetch('/api/scenarios')
+            .then(res => res.json())
+            .then(scenarios => {
+                // Update quick action buttons with demo scenarios
+                const actionGrid = document.querySelector('.action-grid');
+                if (actionGrid && scenarios.length > 0) {
+                    // Take first 6 scenarios for quick actions
+                    const quickScenarios = scenarios.slice(0, 6);
+                    actionGrid.innerHTML = quickScenarios.map(scenario => `
+                        <button class="action-btn" data-prompt="${scenario.query}" data-mode="${scenario.mode}">
+                            ${scenario.title.replace(/[🎵🔬🎨📖🌍💡]/g, '').trim()}
+                        </button>
+                    `).join('');
+                    
+                    // Re-attach event listeners
+                    actionGrid.querySelectorAll('.action-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            this.researchInput.value = btn.dataset.prompt;
+                            if (btn.dataset.mode) {
+                                this.currentMode = btn.dataset.mode;
+                                this.modeButtons.forEach(b => b.classList.remove('active'));
+                                document.querySelector(`.mode-btn[data-mode="${btn.dataset.mode}"]`)?.classList.add('active');
+                            }
+                            this.startResearch();
+                        });
+                    });
+                }
+            })
+            .catch(err => console.error('Failed to load scenarios:', err));
     }
 }
 
-// Initialize demo when DOM is ready
+// Add animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+    }
+    
+    .results-panel.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        margin: 0;
+        border-radius: 0;
+    }
+`;
+document.head.appendChild(style);
+
+// Initialize dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.localMindDemo = new LocalMindDemo();
+    window.dashboard = new LocalMindDashboard();
 });

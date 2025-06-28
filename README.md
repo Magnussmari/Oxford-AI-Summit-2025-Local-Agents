@@ -2,7 +2,7 @@
 
 > **Building Enterprise Multi-Agent AI Systems Locally**
 
-🎥 **[Watch the Talk](link-to-recording)** | 📊 **[View Slides](presentation/slides.md)** | 🚀 **[Try the Demo](#quick-start)**
+📊 **[View Slides](presentation/slides.md)** | 🚀 **[Try the Demo](#quick-start)**
 
 ## 🌟 Overview
 
@@ -69,9 +69,50 @@ Visit http://localhost:8000 to see the agents in action!
 
 ## 🎯 Demo Scenarios
 
-1. **Simple Query** (30s): "What is quantum computing?"
-2. **Complex Analysis** (2min): "Analyze mRNA vaccine mechanisms..."
-3. **Current Events** (1min): "Latest AI safety developments"
+1. **Benefits of Local AI** (2min): Comprehensive analysis with web research and fact validation
+2. **AI Agent Orchestration** (2min): Latest frameworks like AutoGen, LangGraph, and CrewAI
+3. **AI Safety & Alignment 2025** (2min): Current developments with real-time web search
+4. **Quantum Computing Breakthroughs** (90s): Recent achievements by IBM, Google, and IonQ
+5. **AI for Climate Change** (2min): Specific projects and measurable impacts
+6. **Edge AI & IoT Trends** (90s): Neuromorphic chips and smart city applications
+
+*All scenarios include **websites explored** tracking for transparency*
+
+## 🚀 Production Features
+
+The system includes enterprise-grade features for production deployment:
+
+### Core Features
+- **Structured Prompting**: XML-based prompt templates with validation
+- **Chain-of-Thought Reasoning**: Deep analytical thinking for complex queries
+- **Resilient Execution**: Automatic retries, fallbacks, and circuit breakers
+- **Memory System**: SQLite-based learning from past interactions
+- **Agent Communication**: Structured handoffs and context sharing
+- **Web Search Integration**: Real-time research with source tracking
+- **Adaptive Temperature**: Dynamic temperature adjustment based on context
+- **Prompt Optimization**: Token reduction and caching for efficiency
+
+## 🛠️ My Current AI Development Toolkit
+
+**Primary Development Environment:**
+- **VS Code** with GitHub Copilot - Primary coding with AI assistance
+- **Claude Code (Max plan)** - Advanced code analysis and refactoring
+
+**Secondary Tools:**
+- **Cursor Pro** - AI-first code editor for complex projects
+
+**Daily AI Drivers:**
+- **Claude Desktop** - Research, planning, and problem-solving
+- **ChatGPT** - Specialized tasks and alternative perspectives
+- **Gemini** - Multimodal analysis and creative workflows
+
+**Philosophy**: *AI-assisted development isn't just about coding - it's about thinking, planning, and iterating faster*
+
+### Testing Production Features
+```bash
+# Run the enhanced orchestrator test suite
+cd demo && python test_enhanced_quick.py
+```
 
 ## 🛠️ Troubleshooting
 
@@ -85,7 +126,9 @@ Visit http://localhost:8000 to see the agents in action!
 **Event**: Oxford AI Summit 2025  
 **Location**: Oxford, United Kingdom  
 
-Built with ❤️ in Iceland 🇮🇸
+**Portfolio**: [View My AI Projects](Projects_portfolio/) - Arctic species tracking, fire protection systems, and university AI infrastructure
+
+Built with ❤️ in Iceland 🇮🇸 using AI-assisted development
 
 ## 📄 License
 

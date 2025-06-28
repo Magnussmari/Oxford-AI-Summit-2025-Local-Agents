@@ -1,7 +1,32 @@
-fastapi==0.108.0
-uvicorn==0.25.0
-websockets==12.0
-httpx==0.25.2
-psutil==5.9.6
-loguru==0.7.2
-aiohttp==3.9.1
+# LocalMind Collective - Oxford AI Summit 2025 Demo Requirements
+
+# Core Framework
+fastapi
+uvicorn[standard]
+websockets
+
+# HTTP and Async
+aiohttp
+httpx
+
+# Configuration and Validation
+pydantic
+pydantic-settings
+python-dotenv
+
+# Logging and Monitoring
+loguru
+psutil
+
+# Optional: Enhanced monitoring (uncomment if needed)
+# structlog>=23.2.0
+# PyYAML>=6.0.1
+# prometheus-client>=0.19.0
+# opentelemetry-api>=1.21.0
+
+#PII Demo
+anthropic
+pandas
+numpy
+mcp
+aiohttp

@@ -3,168 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LocalMind Collective - Oxford AI Summit 2025</title>
+    <title>Magnus Smari - Local AI Agents | Oxford AI Summit 2025</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app">
         <!-- Header -->
-        <header>
-            <h1>LocalMind Collective</h1>
-            <p class="subtitle">Multi-Agent AI Research System - Live Demo</p>
-            <div class="summit-badge">Oxford AI Summit 2025</div>
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-group">
+                        <span class="logo-icon">🧠</span>
+                        <div>
+                            <h1 class="logo">Magnus Smari</h1>
+                            <p class="logo-subtitle">Local AI Agents • Oxford AI Summit 2025</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-center">
+                    <div class="live-stats">
+                        <div class="stat-item pulse">
+                            <span class="stat-icon">⚡</span>
+                            <span class="stat-value" id="totalTokens">0</span>
+                            <span class="stat-label">tokens</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-icon">⏱️</span>
+                            <span class="stat-value" id="elapsedTime">00:00</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-icon">🤖</span>
+                            <span class="stat-value" id="activeAgentCountHeader">0</span>
+                            <span class="stat-label">agents</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="system-status">
+                    <div class="status-indicators">
+                        <div class="status-item" title="Ollama Connection">
+                            <span class="status-dot active pulse-slow"></span>
+                            <span class="status-label">Local AI</span>
+                        </div>
+                        <div class="status-item" title="Web Search API">
+                            <span class="status-dot" id="webSearchStatus"></span>
+                            <span class="status-label">Web</span>
+                        </div>
+                        <div class="status-item" title="Enhanced Features">
+                            <span class="status-dot active" id="enhancedModeStatus"></span>
+                            <span class="status-label">Enhanced</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <!-- System Status -->
-        <div class="system-status" id="systemStatus">
-            <div class="status-grid">
-                <div class="status-item">
-                    <span class="label">Platform:</span>
-                    <span class="value" id="platform">Loading...</span>
-                </div>
-                <div class="status-item">
-                    <span class="label">GPU:</span>
-                    <span class="value" id="gpu">Loading...</span>
-                </div>
-                <div class="status-item">
-                    <span class="label">VRAM:</span>
-                    <span class="value" id="vram">Loading...</span>
-                </div>
-                <div class="status-item">
-                    <span class="label">CPU Temp:</span>
-                    <span class="value" id="cpuTemp">Loading...</span>
-                </div>
-                <div class="status-item">
-                    <span class="label">Fan Speed:</span>
-                    <span class="value" id="fanSpeed">Loading...</span>
-                </div>
-                <div class="status-item">
-                    <span class="label">Web Search:</span>
-                    <span class="value" id="webSearch">Loading...</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Left Panel: Controls -->
-            <div class="control-panel">
-                <h2>Demo Scenarios</h2>
-                <div class="scenarios" id="scenarios">
-                    <!-- Scenarios will be loaded here -->
-                </div>
-                
-                <div class="custom-query">
-                    <h3>Custom Query</h3>
-                    <textarea id="customQuery" placeholder="Enter your research question..."></textarea>
-                    <select id="queryMode">
-                        <option value="simple">Simple (1 agent)</option>
-                        <option value="auto" selected>Auto (2-3 agents)</option>
-                        <option value="expert">Expert (3-4 agents)</option>
-                    </select>
-                    <button id="runCustom" class="btn-primary">Run Research</button>
-                </div>
-
-                <div class="model-info">
-                    <h3>Available Models</h3>
-                    <div id="modelList" class="model-list">
-                        <!-- Models will be loaded here -->
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="research-section">
+                    <h2 class="section-title">Research Hub</h2>
+                    
+                    <!-- Search Input -->
+                    <div class="search-container">
+                        <input type="text" 
+                               id="researchInput" 
+                               class="search-input" 
+                               placeholder="What would you like to research?"
+                               autocomplete="off">
+                        <button class="voice-btn" title="Voice input">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
                     </div>
-                </div>
-            </div>
 
-            <!-- Right Panel: Results -->
-            <div class="results-panel">
-                <!-- Agent Activity Monitor -->
-                <div class="agent-monitor" id="agentMonitor">
-                    <h3>Agent Activity</h3>
-                    <div class="agent-grid" id="agentGrid">
-                        <div class="agent-card" data-agent="principal">
-                            <div class="agent-icon">🧠</div>
-                            <div class="agent-name">Principal Synthesizer</div>
-                            <div class="agent-status">Idle</div>
-                            <div class="agent-model">deepseek-r1:8b</div>
+                    <!-- Research Mode -->
+                    <div class="mode-selector">
+                        <button class="mode-btn active" data-mode="simple">Simple</button>
+                        <button class="mode-btn" data-mode="auto">Auto</button>
+                        <button class="mode-btn" data-mode="expert">Expert</button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <h3 class="subsection-title">Quick Prompts</h3>
+                        <div class="action-grid">
+                            <button class="action-btn" data-prompt="Analyze the benefits and challenges of running AI systems locally versus cloud-based solutions. Research current industry trends, privacy regulations like GDPR, cost comparisons, and real-world case studies.">
+                                Local AI Benefits
+                            </button>
+                            <button class="action-btn" data-prompt="Research the latest best practices for orchestrating multiple AI agents in production systems. Find information about frameworks like AutoGen, LangGraph, and CrewAI.">
+                                Agent Orchestration
+                            </button>
+                            <button class="action-btn" data-prompt="What are the latest developments in AI safety and alignment as of 2025? Research recent papers, industry initiatives, and regulatory frameworks.">
+                                AI Safety 2025
+                            </button>
+                            <button class="action-btn" data-prompt="What are the most significant quantum computing breakthroughs in the past 12 months? Research specific achievements by companies like IBM, Google, and IonQ.">
+                                Quantum Breakthroughs
+                            </button>
+                            <button class="action-btn" data-prompt="How is AI being used to combat climate change in 2025? Research specific projects, companies, and technologies.">
+                                Climate AI
+                            </button>
+                            <button class="action-btn" data-prompt="What are the latest trends in edge AI and IoT for 2025? Research new hardware like neuromorphic chips and real-world deployments.">
+                                Edge AI Trends
+                            </button>
                         </div>
-                        <div class="agent-card" data-agent="domain">
-                            <div class="agent-icon">🎓</div>
-                            <div class="agent-name">Domain Specialist</div>
-                            <div class="agent-status">Idle</div>
-                            <div class="agent-model">qwen3:8b</div>
-                        </div>
-                        <div class="agent-card" data-agent="web">
-                            <div class="agent-icon">🌐</div>
-                            <div class="agent-name">Web Harvester</div>
-                            <div class="agent-status">Idle</div>
-                            <div class="agent-model">qwen3:4b</div>
-                        </div>
-                        <div class="agent-card" data-agent="fact">
-                            <div class="agent-icon">✓</div>
-                            <div class="agent-name">Fact Validator</div>
-                            <div class="agent-status">Idle</div>
-                            <div class="agent-model">phi4-mini</div>
-                        </div>
-                        <div class="agent-card" data-agent="quality">
-                            <div class="agent-icon">⭐</div>
-                            <div class="agent-name">Quality Auditor</div>
-                            <div class="agent-status">Idle</div>
-                            <div class="agent-model">phi4-mini</div>
+                    </div>
+
+                    <!-- Available Models -->
+                    <div class="available-models">
+                        <h3 class="subsection-title">Available Models</h3>
+                        <div class="model-list" id="availableModels">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Agent Dialogue -->
-                <div class="agent-dialogue" id="agentDialogue">
-                    <h3>Agent Dialogue</h3>
-                    <div class="dialogue-container" id="dialogueContainer">
-                        <p class="dialogue-placeholder">Agent responses will appear here...</p>
+                <!-- GPU Info -->
+                <div class="system-info">
+                    <div class="info-item">
+                        <span class="info-label">Hardware</span>
+                        <span class="info-value" id="gpuInfo">GPU: Loading...</span>
                     </div>
                 </div>
+            </aside>
 
-                <!-- Progress Timeline -->
-                <div class="progress-timeline" id="progressTimeline">
-                    <h3>Execution Timeline</h3>
-                    <div class="timeline-container" id="timelineContainer">
-                        <!-- Timeline events will appear here -->
+            <!-- Content Grid -->
+            <main class="content-grid">
+                <!-- Agent Activity Panel -->
+                <div class="panel agent-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Agent Activity</h3>
+                        <span class="panel-badge" id="activeAgentCount">0 Active</span>
                     </div>
-                </div>
-
-                <!-- Research Results -->
-                <div class="research-results" id="researchResults">
-                    <h3>Research Report</h3>
-                    <div class="results-content" id="resultsContent">
-                        <div class="placeholder">
-                            <p>Select a demo scenario or enter a custom query to begin research.</p>
-                            <p class="hint">The system will orchestrate multiple AI agents to provide comprehensive analysis.</p>
+                    <div class="panel-content">
+                        <div class="agent-grid" id="agentGrid">
+                            <!-- Agent cards populated dynamically -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Performance Metrics -->
-                <div class="performance-metrics" id="performanceMetrics" style="display: none;">
-                    <h3>Performance Metrics</h3>
-                    <div class="metrics-grid">
-                        <div class="metric">
-                            <span class="metric-label">Total Time</span>
-                            <span class="metric-value" id="totalTime">-</span>
+                <!-- Results Panel -->
+                <div class="panel results-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Research Results</h3>
+                        <div class="panel-actions">
+                            <button class="action-icon" title="Copy">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                            <button class="action-icon" title="Download">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                            </button>
+                            <button class="action-icon" title="Fullscreen">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <div class="metric">
-                            <span class="metric-label">Agents Used</span>
-                            <span class="metric-value" id="agentsUsed">-</span>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">VRAM Peak</span>
-                            <span class="metric-value" id="vramPeak">-</span>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">Quality Score</span>
-                            <span class="metric-value" id="qualityScore">-</span>
+                    </div>
+                    <div class="panel-content results-content" id="resultsContent">
+                        <div class="empty-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M9 11l3 3L22 4"></path>
+                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                            </svg>
+                            <p>Start a research query to see results</p>
                         </div>
                     </div>
                 </div>
-            </div>
+
+
+                <!-- Timeline Panel -->
+                <div class="panel timeline-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Execution Timeline</h3>
+                        <span class="elapsed-time" id="elapsedTimeTimeline">00:00</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="timeline" id="timeline">
+                            <!-- Timeline items populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
+    <!-- Include Chart.js for performance visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Include marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.2/marked.min.js"></script>
+    <!-- Include highlight.js for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="/static/script.js"></script>
 </body>
 </html>
