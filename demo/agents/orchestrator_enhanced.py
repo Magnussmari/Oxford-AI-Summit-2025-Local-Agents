@@ -222,7 +222,7 @@ class ProductionOrchestrator:
         await self.communication.agent_handoff(synthesis_handoff)
         
         # Get websites from context
-        websites = self.communication.get_global_context("websites_explored", [])
+        websites = self.communication.get_global_context("websites_explored") or []
         
         # Access wrapped agent if needed
         if hasattr(self.principal, 'agent'):
