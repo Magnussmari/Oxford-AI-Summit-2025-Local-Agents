@@ -33,3 +33,6 @@ presentation/LocalAgents_Slides.md
 presentation/slides.v2.html
 .gitignore
 presentation/LocalAgents_Slides.pdf
+demo/test_slides_display.py
+.gitignore
+.gitignore
