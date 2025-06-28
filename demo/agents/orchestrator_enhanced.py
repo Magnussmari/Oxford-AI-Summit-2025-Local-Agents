@@ -97,20 +97,12 @@ class ProductionOrchestrator:
                 "message": "Analyzing query with enhanced reasoning"
             })
             
-        # Use cached prompts if available
-        analysis_prompt = self.prompt_cache.get("principal_analysis", query)
-        if not analysis_prompt:
-            # Principal will build its own structured prompt
-            # Access the wrapped agent's method if using resilient wrapper
-            if hasattr(self.principal, 'agent'):
-                analysis = await self.principal.agent.analyze_query(query, stream_callback)
-            else:
-                analysis = await self.principal.analyze_query(query, stream_callback)
+        # Always use analyze_query to ensure we get a dict
+        # TODO: Fix cache to properly handle structured responses
+        if hasattr(self.principal, 'agent'):
+            analysis = await self.principal.agent.analyze_query(query, stream_callback)
         else:
-            if hasattr(self.principal, 'agent'):
-                analysis = await self.principal.agent.run(analysis_prompt, stream_callback)
-            else:
-                analysis = await self.principal.run(analysis_prompt, stream_callback)
+            analysis = await self.principal.analyze_query(query, stream_callback)
             
         # Record analysis success
         if isinstance(analysis, dict) and "complexity" in analysis:

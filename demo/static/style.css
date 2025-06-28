@@ -539,6 +539,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    align-self: start;
+    height: 100%;
 }
 
 .results-panel .panel-content {
