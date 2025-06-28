@@ -98,7 +98,7 @@ DEMO_SCENARIOS = [
     },
     {
         "id": "edge_ai_trends",
-        "title": "Edge AI & IoT Trends 2025 📱",
+        "title": "Edge AI & IoT Trends 2025",
         "description": "Technology landscape analysis (90 seconds)",
         "query": "What are the latest trends in edge AI and IoT for 2025? Research new hardware like neuromorphic chips, software frameworks, and real-world deployments. Include specific examples of edge AI applications in smartphones, autonomous vehicles, and smart cities.",
         "mode": "auto",

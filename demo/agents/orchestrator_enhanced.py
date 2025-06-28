@@ -69,7 +69,8 @@ class ProductionOrchestrator:
         # Check memory for similar past queries
         if use_memory:
             similar_memories = self.memory_system.retrieve_similar(query, limit=3)
-            if similar_memories and similar_memories[0].metadata.get("quality_score", 0) > 0.9:
+            quality_score = similar_memories[0].metadata.get("quality_score", 0) if similar_memories else 0
+            if similar_memories and quality_score and quality_score > 0.9:
                 logger.info(f"🎯 CACHE HIT: Using high-quality cached response for query: '{query[:50]}...'")
                 logger.info(f"   Original query timestamp: {similar_memories[0].timestamp}")
                 logger.info(f"   Quality score: {similar_memories[0].metadata.get('quality_score')}")
@@ -175,6 +176,9 @@ class ProductionOrchestrator:
                     level_tasks.append(self._run_web_harvester_enhanced(query, analysis, stream_callback))
                 elif agent_name == "Fact Validator":
                     level_tasks.append(self._run_fact_validator_enhanced(query, findings, stream_callback))
+                elif agent_name == "Quality Auditor":
+                    # Quality Auditor runs after synthesis, so skip here
+                    continue
                     
             # Execute level in parallel
             if level_tasks:
@@ -214,11 +218,14 @@ class ProductionOrchestrator:
         )
         await self.communication.agent_handoff(synthesis_handoff)
         
+        # Get websites from context
+        websites = self.communication.get_global_context("websites_explored", [])
+        
         # Access wrapped agent if needed
         if hasattr(self.principal, 'agent'):
-            final_report = await self.principal.agent.synthesize_findings(query, findings, stream_callback)
+            final_report = await self.principal.agent.synthesize_findings(query, findings, stream_callback, websites)
         else:
-            final_report = await self.principal.synthesize_findings(query, findings, stream_callback)
+            final_report = await self.principal.synthesize_findings(query, findings, stream_callback, websites)
         
         if stream_callback:
             await stream_callback({
@@ -236,7 +243,7 @@ class ProductionOrchestrator:
                     "message": "Performing quality audit"
                 })
                 
-            quality_score = await self.quality_auditor.audit(final_report, stream_callback)
+            quality_score = await self.quality_auditor.agent.audit(final_report, stream_callback)
             
             if stream_callback:
                 await stream_callback({
@@ -350,11 +357,22 @@ class ProductionOrchestrator:
         start = time.time()
         result = await self.web_harvester.agent.search(query, aspects, callback)
         
+        # Handle new response format
+        if isinstance(result, dict):
+            content = result.get("content", "")
+            websites = result.get("websites_explored", [])
+            # Store websites for later use
+            self.communication.set_global_context("websites_explored", websites)
+        else:
+            # Backward compatibility
+            content = result
+            websites = []
+        
         self.health_monitor.record_execution(
             "Web Harvester",
             success=True,
             execution_time=time.time() - start,
-            tokens=len(result.split())
+            tokens=len(content.split())
         )
         
         if callback:
@@ -363,7 +381,7 @@ class ProductionOrchestrator:
                 "agent": "Web Harvester"
             })
             
-        return ("Web Harvester", result)
+        return ("Web Harvester", content)
         
     async def _run_fact_validator_enhanced(self, query: str, findings: Dict[str, str], 
                                           callback) -> tuple:

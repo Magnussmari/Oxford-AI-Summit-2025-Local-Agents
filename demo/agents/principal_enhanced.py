@@ -180,7 +180,7 @@ Now let me apply this thinking to the specific query...
         return aspects[:5]  # Limit to 5 aspects
         
     async def synthesize_findings(self, query: str, findings: Dict[str, str], 
-                                 stream_callback=None) -> str:
+                                 stream_callback=None, websites: List[Dict[str, str]] = None) -> str:
         """Enhanced synthesis with structured output"""
         
         # Build structured synthesis prompt
@@ -203,6 +203,14 @@ Now let me apply this thinking to the specific query...
 </synthesis_guidelines>
 
 Remember: This is for a live demonstration. Be concise but impactful."""
+
+        # Add references section if websites are available
+        if websites and len(websites) > 0:
+            enhanced_prompt += "\n\nInclude a 'References' section at the end with the following websites:\n"
+            for site in websites:
+                title = site.get('title', 'Unknown')
+                url = site.get('url', '#')
+                enhanced_prompt += f"- [{title}]({url})\n"
         
         # Run with optimization
         context = {

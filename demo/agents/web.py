@@ -75,7 +75,13 @@ Provide current information (as of {CURRENT_DATE}) with the following structure:
 
 Be specific and cite which websites provided which information."""
 
-        return await self.run(prompt, stream_callback)
+        response = await self.run(prompt, stream_callback)
+        
+        # Return both the response and the websites explored
+        return {
+            "content": response,
+            "websites_explored": websites_explored
+        }
     
     async def _brave_search(self, query: str, count: int = 5) -> List[Dict[str, Any]]:
         """Perform Brave search."""

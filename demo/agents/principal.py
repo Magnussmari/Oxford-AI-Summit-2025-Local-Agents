@@ -4,7 +4,7 @@ Principal Synthesizer Agent - Orchestrates multi-agent research
 
 import json
 import re
-from typing import Dict, Any
+from typing import Dict, Any, List
 from loguru import logger
 from .base import PresentationAgent, CURRENT_DATE
 
@@ -60,7 +60,7 @@ Provide analysis in JSON format:
             "key_aspects": ["main topic", "current state"]
         }
     
-    async def synthesize_findings(self, query: str, findings: Dict[str, str], stream_callback=None) -> str:
+    async def synthesize_findings(self, query: str, findings: Dict[str, str], stream_callback=None, websites: List[Dict[str, str]] = None) -> str:
         """Synthesize agent findings into coherent report."""
         findings_text = "\n\n".join(
             f"=== {agent} ===\n{content[:500]}"  # Limit for speed
@@ -89,6 +89,14 @@ Format the output as a clean markdown report with:
 - Conclusion
 
 Keep it brief for presentation (3-4 paragraphs total)."""
+
+        # Add references if available
+        if websites and len(websites) > 0:
+            prompt += "\n\nAlso include a 'References' section at the end with these sources:\n"
+            for site in websites:
+                title = site.get('title', 'Unknown')
+                url = site.get('url', '#')
+                prompt += f"- [{title}]({url})\n"
 
         response = await self.run(prompt, stream_callback)
         

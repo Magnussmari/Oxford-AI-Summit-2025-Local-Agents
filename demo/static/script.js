@@ -35,7 +35,15 @@ class LocalMindDashboard {
     initializeMarkdown() {
         // Configure marked.js for better markdown rendering
         if (typeof marked !== 'undefined') {
+            // Create custom renderer to make links open in new tabs
+            const renderer = new marked.Renderer();
+            renderer.link = function(href, title, text) {
+                const titleAttr = title ? ` title="${title}"` : '';
+                return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+            };
+            
             marked.setOptions({
+                renderer: renderer,
                 highlight: function(code, lang) {
                     if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
                         try {

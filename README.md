@@ -1,8 +1,7 @@
-# LocalMind Collective - Oxford AI Summit 2025
+# Local AI agentic system - Oxford AI Summit 2025
 
 > **Building Enterprise Multi-Agent AI Systems Locally**
 
-📊 **[View Slides](presentation/LocalAgents_Slides.md)** | 🚀 **[Try the Demo](#quick-start)**
 
 ## 🌟 Overview
 
