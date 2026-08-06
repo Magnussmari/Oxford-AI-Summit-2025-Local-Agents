@@ -1,10 +1,10 @@
 # Local Agentic System - Oxford AI Summit 2025
 
-> **Enterprise-Ready Multi-Agent AI System (100% Local Execution)**
+> **Multi-agent system running entirely on local hardware — workshop material from the Oxford AI Summit 2025**
 
 ## Overview
 
-This repository contains a modular, production-grade multi-agent AI framework that runs entirely on local hardware. It orchestrates multiple specialized agents for advanced reasoning, research, validation, and quality assurance—no cloud required.
+This repository contains a modular multi-agent framework that runs entirely on local hardware. It orchestrates multiple specialized agents for advanced reasoning, research, validation, and quality assurance—no cloud required.
 
 ## Features
 - 100% local execution (no external dependencies)
